@@ -23,7 +23,7 @@ const UserSchema = new mongoose.Schema({
     profileImg:{
         type: String,
     }
-});
+}, {timestamps: true});
 
 const User = mongoose.model('users', UserSchema);
 

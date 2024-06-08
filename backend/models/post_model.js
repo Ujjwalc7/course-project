@@ -1,3 +1,4 @@
+const { Timestamp } = require('mongodb');
 const mongoose = require('mongoose');
 
 
@@ -32,7 +33,7 @@ const PostSchema = new mongoose.Schema({
                 ref: 'comments'
         }
     ]
-});
+}, {timestamps: true});
 
 const Post = mongoose.model('posts', PostSchema);
 

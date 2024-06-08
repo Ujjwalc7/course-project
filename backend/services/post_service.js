@@ -146,29 +146,31 @@ const likeUnlikePost = async (postId, user) => {
 
 // fuction to add comments on posts
 
-const postComment = async (postId, body, user) => {
+const postComment = async (postId, body, user, res) => {
   try {
-    const post = await Post.findById(postId);
-    if (!post) {
-      throw new Error("Post not found");
+    if (!body.comment) {
+      res.status(400).json("Comment is required")
     }
     const newComment = await Comment.create({
       author: user._id,
       comment: body.comment,
-      post: post._id,
+      post: postId,
     });
     await newComment.save();
-    post.comments.push(newComment);
-    await post.save();
-    return await Post.findById(postId)
-    .populate("author", "firstName lastName")
-    .populate("likes", "firstName lastName")
-    .populate({
-      path: "comments",
-      populate: { path: "author", select: "firstName lastName" },
-    });
+    const post = await Post.findByIdAndUpdate(
+      postId,
+      { $push: { comments: newComment } },
+      { new: true } //reutrns updated data
+    )
+      .populate("author", "firstName lastName") //populate post owner
+      .populate("likes", "firstName lastName") //populate post likes
+      .populate({
+        path: "comments",
+        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
+      })
+      .exec();
+    return post;
   } catch (error) {
-    console.log(error.message);
     throw new Error(error.message);
   }
 };

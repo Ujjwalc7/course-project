@@ -13,7 +13,7 @@ const CommentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'posts'
     }
-});
+}, {timestamps: true});
 
 const Comment = mongoose.model('comments', CommentSchema);
 
