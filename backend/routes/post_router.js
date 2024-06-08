@@ -13,6 +13,7 @@ router.get('/get/user/all-post', protectedResource, postController.getUserAllPos
 router.put('/update/post', protectedResource, postController.updatePostById);
 router.delete('/delete/post/id/:id', protectedResource, postController.deletePostById);
 router.put('/likes/post/id/:id', protectedResource, postController.likeUnlikePost);
+router.put('/comment/post/id/:id', protectedResource, postController.postComment);
 
 
 

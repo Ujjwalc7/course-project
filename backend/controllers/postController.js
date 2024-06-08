@@ -78,7 +78,7 @@ const likeUnlikePost = async(req, res) => {
     const postId = req.params.id;
     const user = req.user;
     try {
-        const resp = await postService.likePost(postId, user);
+        const resp = await postService.likeUnlikePost(postId, user);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error.message);
@@ -86,6 +86,20 @@ const likeUnlikePost = async(req, res) => {
     }
 }
 
+
+// fuction to add comments on posts
+
+const postComment = async(req, res) => {
+    const postId = req.params.id;
+    const user = req.user;
+    try {
+        const resp = await postService.postComment(postId, req.body, user);
+        res.status(200).json(resp);
+    } catch (error) {
+        console.log(error.message);
+        res.status(500).json(error.message);
+    }
+}
 module.exports = {
     createPost,
     updatePostById,
@@ -93,5 +107,6 @@ module.exports = {
     getAllPost,
     getPostById,
     getUserAllPost,
-    likeUnlikePost
+    likeUnlikePost,
+    postComment
 }
