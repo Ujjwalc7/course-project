@@ -41,7 +41,7 @@ const deleteUserById = async(userId) => {
 
 const updateUserById = async(userId, body) => {
     try {
-        const resp = User.findByIdAndUpdate(userId, body);
+        const resp = await User.findByIdAndUpdate(userId, body);
         return resp;
     } catch (error) {
         throw new Error(error);

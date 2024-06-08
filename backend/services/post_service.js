@@ -18,10 +18,14 @@ const createPost = async (body, user) => {
 // function to get post by postId
 const getPostById = async (id) => {
   try {
-    const resp = await Post.findById(id).populate({
-      path: "author",
-      select: "-password",
-    });
+    const resp = await Post.findById(id)
+      .populate("author", "firstName lastName") //populate post owner
+      .populate("likes", "firstName lastName") //populate post likes
+      .populate({
+        path: "comments",
+        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
+      })
+      .exec();
     if (!resp) {
       throw new Error("Post not found");
     }
@@ -36,8 +40,13 @@ const getPostById = async (id) => {
 const getAllPost = async () => {
   try {
     const resp = await Post.find()
-      .populate({ path: "author", select: "-password" })
-      .lean();
+      .populate("author", "firstName lastName") //populate post owner
+      .populate("likes", "firstName lastName") //populate post likes
+      .populate({
+        path: "comments",
+        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
+      })
+      .exec();
     if (!resp) {
       throw new Error("Posts not found");
     }
@@ -52,8 +61,13 @@ const getAllPost = async () => {
 const getUserAllPost = async (user) => {
   try {
     const resp = await Post.find({ author: user._id })
-      .populate({ path: "author", select: "-password" })
-      .lean();
+      .populate("author", "firstName lastName") //populate post owner
+      .populate("likes", "firstName lastName") //populate post likes
+      .populate({
+        path: "comments",
+        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
+      })
+      .exec();
     if (!resp) {
       throw new Error("Posts not found");
     }
@@ -117,23 +131,18 @@ const deleteOldImage = (image) => {
 
 // fuction to like posts
 
-const likeUnlikePost = async (postId, user) => {
+const likeUnlikePost = async (postId, user, res) => {
   try {
-    const post = await Post.findById(postId).populate({
-      path: "author",
-      select: "-password",
-    });
+    const post = await Post.findById(postId);
     if (!post) {
-      throw new Error("Post not found");
+      res.status(404).json("Post not found");
     }
     // if(userId already present in likes of a post then remove it or else add user id to like)
     if (post.likes.includes(user._id)) {
-      console.log(true);
       post.likes = post.likes.filter(
         (userId) => userId.toString() !== user._id.toString()
       );
     } else {
-      console.log(false);
       post.likes.push(user._id);
     }
     post.save();
@@ -149,9 +158,9 @@ const likeUnlikePost = async (postId, user) => {
 const postComment = async (postId, body, user, res) => {
   try {
     if (!body.comment) {
-      res.status(400).json("Comment is required")
+      res.status(400).json("Comment is required");
     }
-    const newComment = await Comment.create({
+    const newComment = new Comment({
       author: user._id,
       comment: body.comment,
       post: postId,

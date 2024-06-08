@@ -78,7 +78,7 @@ const likeUnlikePost = async(req, res) => {
     const postId = req.params.id;
     const user = req.user;
     try {
-        const resp = await postService.likeUnlikePost(postId, user);
+        const resp = await postService.likeUnlikePost(postId, user, res);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error.message);
