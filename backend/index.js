@@ -18,14 +18,15 @@ mongoose.connection.on('error', ()=>{
 })
 
 
-require('./models/post_model');
+require('./models/tweet_model');
 require('./models/user_model');
 
 app.use(cors());
 app.use(express.json());
 
 
-//all apis to interact with client
+//all APIs to interact with client
+app.use('/api/auth', require('./routes/auth_router'));
 app.use('/api/user', require('./routes/user_router'));
 app.use('/api/post', require('./routes/post_router'));
 

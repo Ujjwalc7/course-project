@@ -1,5 +1,3 @@
-const express = require("express");
-const router = express.Router();
 const multer = require("multer");
 
 //  configuring storage to store images
@@ -8,7 +6,10 @@ const storage  = multer.diskStorage({
         cb(null,'uploads/');
     },
     filename: (req,file,cb)=>{
-        cb(null,file.originalname);
+        const filename = file.originalname.split(" ").join("");
+        const uniqueSuffix=Date.now()+'-'+Math.round(Math.random()*1e9);
+        const fileExtention= filename.split('.').pop();
+        cb(null,filename.split('.')[0]+'-'+uniqueSuffix+'.'+fileExtention);
     }
 });
 
@@ -19,14 +20,10 @@ const upload = multer({
         fileSize: 1024 * 1024 * 5
     },
      fileFilter: (req,file,cb)=>{
-        const {description, location} = req.body;
-        if(!description, !location){
-            return;
-        }
          if(file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg"){
              cb(null,true);
          }else{
-            cb(null,false);
+            cb('not supported file',false);
             return;
          }
      }

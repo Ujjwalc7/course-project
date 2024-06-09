@@ -1,12 +1,12 @@
 const Comment = require("../models/comment_model");
-const Post = require("../models/post_model");
+const Tweet = require("../models/tweet_model");
 const fs = require("fs");
 
 // function to create new post which takes the user data and post data as parameters
-const createPost = async (body, user) => {
+const createPost = async (body, user, res) => {
   try {
     user.password = undefined;
-    const post = new Post({ ...body, author: user });
+    const post = new Tweet({ ...body, author: user });
     const createdPost = await post.save();
     return createdPost;
   } catch (error) {
@@ -16,18 +16,14 @@ const createPost = async (body, user) => {
 };
 
 // function to get post by postId
-const getPostById = async (id) => {
+const getPostById = async (id, res) => {
   try {
-    const resp = await Post.findById(id)
-      .populate("author", "firstName lastName") //populate post owner
-      .populate("likes", "firstName lastName") //populate post likes
-      .populate({
-        path: "comments",
-        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
-      })
+    const resp = await Tweet.findById(id)
+      .populate("author", "userName profileImg") //populate post owner
+      .populate({path:"replies", populate: {path: 'author', select: "userName profileImg"}}) // populate post replies and authors of replied tweets
       .exec();
     if (!resp) {
-      throw new Error("Post not found");
+      res.status(404).json("Post not found");
     }
     return resp;
   } catch (error) {
@@ -37,18 +33,13 @@ const getPostById = async (id) => {
 
 // function to get all the posts and populate the author field
 
-const getAllPost = async () => {
+const getAllPost = async (res) => {
   try {
-    const resp = await Post.find()
-      .populate("author", "firstName lastName") //populate post owner
-      .populate("likes", "firstName lastName") //populate post likes
-      .populate({
-        path: "comments",
-        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
-      })
-      .exec();
+    const resp = await Tweet.find()
+      .populate("author", "userName profileImg")
+      .exec(); //populate post owner
     if (!resp) {
-      throw new Error("Posts not found");
+      res.status(404).json("Post not found");
     }
     return resp;
   } catch (error) {
@@ -60,13 +51,8 @@ const getAllPost = async () => {
 
 const getUserAllPost = async (user) => {
   try {
-    const resp = await Post.find({ author: user._id })
-      .populate("author", "firstName lastName") //populate post owner
-      .populate("likes", "firstName lastName") //populate post likes
-      .populate({
-        path: "comments",
-        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
-      })
+    const resp = await Tweet.find({$or: [{author: user._id}, {replies: user._id}] })
+      .populate("author", "userName profileImg") //populate post owner
       .exec();
     if (!resp) {
       throw new Error("Posts not found");
@@ -78,20 +64,22 @@ const getUserAllPost = async (user) => {
 };
 
 // function to delete the posts only by authorized user
-const deletePostById = async (postId, user) => {
+const deletePostById = async (postId, user, res) => {
   try {
-    const post = await Post.findById(postId).populate({
+    const post = await Tweet.findById(postId).populate({
+      //populates user details
       path: "author",
       select: "-password",
     });
     if (!post) {
       throw new Error("Post not found");
     }
+    // delete the tweet only if the user is authorized
     if (post.author._id.toString() === user._id.toString()) {
-      const resp = await Post.findByIdAndDelete(postId);
+      const resp = await Tweet.findByIdAndDelete(postId);
       return resp;
     } else {
-      throw new Error("You are not authorized to delete this post");
+      res.status(400).json("You are not authorized to delete this post");
     }
   } catch (error) {
     throw new Error(error.message);
@@ -100,14 +88,14 @@ const deletePostById = async (postId, user) => {
 
 // function to update the post and delete old image of the post
 
-const updatePostById = async (body, file) => {
+const updatePostById = async (body, file, res) => {
   try {
     if (file) {
       deleteOldImage(body.image);
-      body.image = file.path.split("\\")[1];
+      body.image = file.path.split("\\")[1]; // setting updated image to the tweet
       body.newImage = undefined;
     }
-    const post = await Post.findByIdAndUpdate(body._id, body);
+    const post = await Tweet.findByIdAndUpdate(body._id, body, {new: true}); // returning updated document
     return post;
   } catch (error) {
     throw new Error(error);
@@ -119,7 +107,7 @@ const updatePostById = async (body, file) => {
 const deleteOldImage = (image) => {
   try {
     if (image) {
-      fs.unlinkSync(`./uploads/${image}`);
+      fs.unlinkSync(`./uploads/${image}`); // remove old image from filesystem
       return { message: "Image deleted successfully" };
     } else {
       throw new Error("Image not found");
@@ -133,7 +121,7 @@ const deleteOldImage = (image) => {
 
 const likeUnlikePost = async (postId, user, res) => {
   try {
-    const post = await Post.findById(postId);
+    const post = await Tweet.findById(postId);
     if (!post) {
       res.status(404).json("Post not found");
     }
@@ -145,39 +133,29 @@ const likeUnlikePost = async (postId, user, res) => {
     } else {
       post.likes.push(user._id);
     }
-    post.save();
+    await post.save();
     return post;
   } catch (error) {
-    console.log(error.message);
+    console.log(error);
     throw new Error(error.message);
   }
 };
 
-// fuction to add comments on posts
+// fuction to add reply on posts
 
-const postComment = async (postId, body, user, res) => {
+const postReply = async (postId, body, user, res) => {
   try {
-    if (!body.comment) {
-      res.status(400).json("Comment is required");
-    }
-    const newComment = new Comment({
-      author: user._id,
-      comment: body.comment,
-      post: postId,
-    });
-    await newComment.save();
-    const post = await Post.findByIdAndUpdate(
+    user.password = undefined;
+    // creating new tweet
+    const newPost = new Tweet({ ...body, author: user });
+    const createdPost = await newPost.save();
+    const post = await Tweet.findByIdAndUpdate(
       postId,
-      { $push: { comments: newComment } },
-      { new: true } //reutrns updated data
-    )
-      .populate("author", "firstName lastName") //populate post owner
-      .populate("likes", "firstName lastName") //populate post likes
-      .populate({
-        path: "comments",
-        populate: { path: "author", select: "firstName lastName" }, //populate authors who comments on this post
-      })
-      .exec();
+      {
+        $push: { replies: createdPost },
+      },
+      { new: true } // To return the updated document
+    ); // finding the tweet by id sent from the client
     return post;
   } catch (error) {
     throw new Error(error.message);
@@ -192,5 +170,5 @@ module.exports = {
   getPostById,
   getUserAllPost,
   likeUnlikePost,
-  postComment,
+  postReply,
 };

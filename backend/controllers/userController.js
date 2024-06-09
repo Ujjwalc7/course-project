@@ -6,8 +6,8 @@ const jwtProvider = require('../config/jwtProvider');
 // funtion for user sign up
 const createUser = async (req, res) => {
     try {
-      const { firstName, lastName, email, password } = req.body;
-      if (!firstName || !lastName || !email || !password) {
+      const { name, userName, email, password } = req.body;
+      if (!name || !userName || !email || !password) {
         return res.status(400).json({ error: "one or more feilds are empty" });
       }
       const userFound = await User.findOne({ email: email });
@@ -98,8 +98,13 @@ const deleteUserById = async(req, res) => {
 
 const updateUserById = async(req, res) => {
     const id = req.params.id;
+    let profileImg;
     try {
-        const resp = await userService.updateUserById(id)
+      if(req.file){
+        profileImg = req.file.path.split('\\')[1];
+        
+      }
+        const resp = await userService.updateUserById(id, {...req.body, profileImg: profileImg ? profileImg : undefined});
         res.status(200).json(error);
     } catch (error) {
         console.log('err');

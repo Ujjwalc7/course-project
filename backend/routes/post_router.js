@@ -8,12 +8,12 @@ const upload = require('../middleWare/upload');
 
 router.post('/create', protectedResource, upload.single('image'), postController.createPost);
 router.get('/get/all-post', postController.getAllPost);
-router.get('/get/post/id/:id', protectedResource, postController.getPostById);
 router.get('/get/user/all-post', protectedResource, postController.getUserAllPost);
 router.put('/update/post', protectedResource, postController.updatePostById);
+router.put('/id/:id/reply', protectedResource, upload.single('image'), postController.postReply);
+router.get('/get/post/id/:id', protectedResource, postController.getPostById);
+router.put('/likes/id/:id', protectedResource, postController.likeUnlikePost);
 router.delete('/delete/post/id/:id', protectedResource, postController.deletePostById);
-router.put('/likes/post/id/:id', protectedResource, postController.likeUnlikePost);
-router.put('/comment/post/id/:id', protectedResource, postController.postComment);
 
 
 

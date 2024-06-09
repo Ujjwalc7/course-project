@@ -1,17 +1,11 @@
-const upload = require('../middleWare/upload');
 const postService = require('../services/post_service');
 
 const createPost = async(req, res) => {
-    const {description, location} = req.body;
     try {
-        if(!description || !location) {
-            throw new Error('All fields are required');
+        if(req.file){
+            req.body.image = req.file.path.split('\\')[1];
         }
-        if(!req.file){
-            throw new Error('Not supported file type / missing image file');
-        }
-        const image = req.file.path.split('\\')[1];
-        const resp = await postService.createPost({...req.body, image: image}, req.user);
+        const resp = await postService.createPost({...req.body}, req.user, res);
         res.status(201).json(resp);
     } catch (error) {
         res.status(500).json({error: error.message || "Something went wrong"});
@@ -21,7 +15,7 @@ const createPost = async(req, res) => {
 const getPostById = async(req, res) => {
     const id = req.params.id;
     try {
-        const resp = await postService.getPostById(id);
+        const resp = await postService.getPostById(id, res);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error.message);
@@ -31,7 +25,7 @@ const getPostById = async(req, res) => {
 
 const getAllPost = async(req, res) => {
     try {
-        const resp = await postService.getAllPost();
+        const resp = await postService.getAllPost(res);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error.message);
@@ -54,7 +48,7 @@ const deletePostById = async(req, res) => {
     const postId = req.params.id;
     const user = req.user;
     try {
-        const resp = await postService.deletePostById(postId, user);
+        const resp = await postService.deletePostById(postId, user, res);
         res.status(200).json({message: 'post deleted successfully'});
     } catch (error) {
         console.log(error.message);
@@ -64,7 +58,7 @@ const deletePostById = async(req, res) => {
 
 const updatePostById = async(req, res) => {
     try {
-        const resp = await postService.updatePostById(req.body, req.file);
+        const resp = await postService.updatePostById(req.body, req.file, res);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error.message);
@@ -89,13 +83,17 @@ const likeUnlikePost = async(req, res) => {
 
 // fuction to add comments on posts
 
-const postComment = async(req, res) => {
+const postReply = async(req, res) => {
     const postId = req.params.id;
     const user = req.user;
     try {
-        const resp = await postService.postComment(postId, req.body, user, res);
+        if(req.file){
+            req.body.image = req.file.path.split('\\')[1];
+        }
+        const resp = await postService.postReply(postId, req.body, user, res);
         res.status(200).json(resp);
     } catch (error) {
+        console.log(error);
         res.status(500).json(error.message);
     }
 }
@@ -107,5 +105,5 @@ module.exports = {
     getPostById,
     getUserAllPost,
     likeUnlikePost,
-    postComment
+    postReply
 }

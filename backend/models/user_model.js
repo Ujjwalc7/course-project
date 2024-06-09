@@ -4,11 +4,11 @@ const mongoose = require('mongoose');
 // users schema
 
 const UserSchema = new mongoose.Schema({
-    firstName:{
+    name:{
         type: String,
         required: true
     },
-    lastName:{
+    userName:{
         type: String,
         required: true
     },
@@ -22,7 +22,25 @@ const UserSchema = new mongoose.Schema({
     },
     profileImg:{
         type: String,
-    }
+    },
+    dateOfbirth:{
+        type: Date,
+    },
+    location:{
+        type: String,
+    },
+    followers:[
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'users'
+        }
+    ],
+    following:[
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'users'
+        }
+    ]
 }, {timestamps: true});
 
 const User = mongoose.model('users', UserSchema);
