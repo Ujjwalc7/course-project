@@ -20,10 +20,16 @@ const upload = multer({
         fileSize: 1024 * 1024 * 5
     },
      fileFilter: (req,file,cb)=>{
+        if(req.params.userId){
+            if(req.user._id.toString() !== req.params.userId.toString()){
+                cb(new Error('user is not authorized to perform this action'),false);
+                return;
+            }
+        }
          if(file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg"){
              cb(null,true);
          }else{
-            cb('not supported file',false);
+            cb(new Error('only image files are allowed'),false);
             return;
          }
      }

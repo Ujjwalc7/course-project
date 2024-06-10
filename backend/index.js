@@ -31,5 +31,9 @@ app.use('/api/user', require('./routes/user_router'));
 app.use('/api/post', require('./routes/post_router'));
 
 
+// middleware to handle error when occurred during handling image files
+app.use(require('./middleWare/handleMulterError'))
+
+
 app.listen(PORT,()=>console.log(`Server listening on port: `+PORT));
 

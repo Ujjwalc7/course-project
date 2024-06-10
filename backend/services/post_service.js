@@ -24,6 +24,7 @@ const getPostById = async (id, res) => {
       .exec();
     if (!resp) {
       res.status(404).json("Post not found");
+      return;
     }
     return resp;
   } catch (error) {
@@ -40,6 +41,7 @@ const getAllPost = async (res) => {
       .exec(); //populate post owner
     if (!resp) {
       res.status(404).json("Post not found");
+      return;
     }
     return resp;
   } catch (error) {
@@ -72,33 +74,22 @@ const deletePostById = async (postId, user, res) => {
       select: "-password",
     });
     if (!post) {
-      throw new Error("Post not found");
+      res.status(404).json("No post found!");
+      return;
     }
     // delete the tweet only if the user is authorized
     if (post.author._id.toString() === user._id.toString()) {
+      if(post.image){
+        deleteOldImage(post.image);  //If the tweet has an image, delete it
+      }
       const resp = await Tweet.findByIdAndDelete(postId);
       return resp;
     } else {
       res.status(400).json("You are not authorized to delete this post");
+      return;
     }
   } catch (error) {
     throw new Error(error.message);
-  }
-};
-
-// function to update the post and delete old image of the post
-
-const updatePostById = async (body, file, res) => {
-  try {
-    if (file) {
-      deleteOldImage(body.image);
-      body.image = file.path.split("\\")[1]; // setting updated image to the tweet
-      body.newImage = undefined;
-    }
-    const post = await Tweet.findByIdAndUpdate(body._id, body, {new: true}); // returning updated document
-    return post;
-  } catch (error) {
-    throw new Error(error);
   }
 };
 
@@ -117,6 +108,25 @@ const deleteOldImage = (image) => {
   }
 };
 
+
+// function to update the post and delete old image of the post
+
+// const updatePostById = async (body, file, res) => {
+//   try {
+//     if (file) {
+//       deleteOldImage(body.image);
+//       body.image = file.path.split("\\")[1]; // setting updated image to the tweet
+//       body.newImage = undefined;
+//     }
+//     const post = await Tweet.findByIdAndUpdate(body._id, body, {new: true}); // returning updated document
+//     return post;
+//   } catch (error) {
+//     throw new Error(error);
+//   }
+// };
+
+
+
 // fuction to like posts
 
 const likeUnlikePost = async (postId, user, res) => {
@@ -124,6 +134,7 @@ const likeUnlikePost = async (postId, user, res) => {
     const post = await Tweet.findById(postId);
     if (!post) {
       res.status(404).json("Post not found");
+      return;
     }
     // if(userId already present in likes of a post then remove it or else add user id to like)
     if (post.likes.includes(user._id)) {
@@ -162,13 +173,37 @@ const postReply = async (postId, body, user, res) => {
   }
 };
 
+// function to retweet or cancel a retweet
+
+const reTweet = async(postId, user, res) => {
+  try {
+    const tweet = await Tweet.findById(postId);
+    if(!tweet) {
+      res.status(404).json("Post not found");
+      return;
+    }
+    if(tweet.retweetBy.includes(user._id)){
+      tweet.retweetBy = tweet.retweetBy.filter(
+        (userId) => userId.toString() !== user._id.toString()
+      );
+    }else{
+      tweet.retweetBy.push(user._id);
+    }
+    return await tweet.save();
+  } catch (error) {
+      console.log(error);
+      throw new Error(error.message);
+  }
+}
+
 module.exports = {
   createPost,
-  updatePostById,
+  // updatePostById,
   deletePostById,
   getAllPost,
   getPostById,
   getUserAllPost,
   likeUnlikePost,
   postReply,
+  reTweet
 };

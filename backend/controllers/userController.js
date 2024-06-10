@@ -64,7 +64,7 @@ const getUser = async(req, res) => {
       }
         return res.status(200).json(user);
     } catch (error) {
-        return res.status(500).json(error);
+        return res.status(500).json(error.message);
     }
 }
 
@@ -86,7 +86,7 @@ const deleteUserById = async(req, res) => {
     const id = req.params.id;
     try {
         const resp  = await userService.deleteUserById(id);
-        res.status(200).json(error);
+        res.status(200).json(resp);
     } catch (error) {
         console.log('err');
         res.status(500).json(error);
@@ -97,19 +97,61 @@ const deleteUserById = async(req, res) => {
 //function to update user details by user id
 
 const updateUserById = async(req, res) => {
-    const id = req.params.id;
+    const id = req.params.userId;
+    const user = req.user;
     let profileImg;
     try {
       if(req.file){
         profileImg = req.file.path.split('\\')[1];
         
       }
-        const resp = await userService.updateUserById(id, {...req.body, profileImg: profileImg ? profileImg : undefined});
-        res.status(200).json(error);
+        const resp = await userService.updateUserById(id, {...req.body, profileImg: profileImg ? profileImg : req.body.profileImg}, user, res);
+        res.status(200).json(resp);
     } catch (error) {
-        console.log('err');
-        res.status(500).json(error);
+        console.log(error);
+        res.status(500).json(error.message);
     }
+}
+
+//function to delete profile picture of the user
+const deleteProfileImage = async(req, res) => {
+  const id = req.params.id;
+  const user = req.user;
+  try {
+      const resp = await userService.deleteProfileImage(id, user, res);
+      res.status(200).json(resp);
+  } catch (error) {
+      console.log(error);
+      res.status(500).json(error.message);
+  }
+}
+
+// function to follow users
+const follow = async(req, res) => {
+  const userId = req.params.userId;
+  const user = req.user;
+  try {
+    const resp = await userService.follow(userId, user, res);
+    if(resp){
+      res.status(200).json(resp);
+    }
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
+}
+
+// function to unfollow users
+const unFollow = async(req, res) => {
+  const userId = req.params.userId;
+  const user = req.user;
+  try {
+    const resp = await userService.unFollow(userId, user, res);
+    if(resp){
+      res.status(200).json(resp);
+    }
+  } catch (error) {
+    res.status(500).json(error.message);
+  }
 }
 
 module.exports = {
@@ -118,5 +160,8 @@ module.exports = {
     deleteUserById,
     getAllUser,
     getUser,
-    login
+    login,
+    deleteProfileImage,
+    follow,
+    unFollow
 }
