@@ -1,35 +1,71 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from "react";
+import "./App.css";
+import Navbar from "./user/components/navbar/Navbar";
+import {Routes, Route, useNavigate } from "react-router-dom";
+import Home from "./user/pages/home/Home";
+import TopNavbar from "./user/components/TopNavbar";
+import Tweet from "./user/pages/profile page/ProfileDetails";
+import getUserByJwt from "./store/services/user/getUserByJwt";
+import AuthLayout from "./user/components/AuthLayout";
+import { useDispatch } from "react-redux";
+import { logout, setUser } from "./store/slices/user/authSlice";
+import Login from "./user/pages/login/Login";
+import Signup from "./user/pages/signup/Signup";
+import OtherRoutes from "./user/components/OtherRoutes";
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const getUser = async () => {
+    const jwt = localStorage.getItem("jwt");
+    try {
+      if (jwt) {
+        const resp = await getUserByJwt(jwt);
+      if (resp) {
+        dispatch(setUser(resp));
+        // navigate('/');
+        setLoading(false);
+      }
+      } else {
+        localStorage.removeItem("jwt");
+        dispatch(logout());
+        setLoading(false);
+      }
+    } catch (error) {
+        console.log(error);
+        localStorage.removeItem("jwt");
+        dispatch(logout());
+        setLoading(false);
+    }
+  };
+  useEffect(() => {
+    getUser();
+  }, []);
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+  return !loading && (
+    <main className="h-[100vh] m-auto overflow-y-hidden max-w-[1536px]">
+    <Routes>
+      <Route
+        path="/login"
+        element={
+          <AuthLayout authentication={false}>
+            <Login />
+          </AuthLayout>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <AuthLayout authentication={false}>
+            <Signup />
+          </AuthLayout>
+        }
+      />
+      <Route path="/*" element={<OtherRoutes/>} />
+    </Routes>
+    </main>
+  );
 }
 
-export default App
+export default App;

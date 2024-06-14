@@ -1,0 +1,22 @@
+.preview_img{
+    object-fit: contain !important;
+    object-position: center !important;
+    width: 100%;
+    height: 100%;
+}
+
+    /* removing scroll bar css */
+.MuiBox-root::-webkit-scrollbar {
+    width: 0px !important; /* Width of the scrollbar */
+    background-color: aqua;
+}
+
+  /* Track */
+.MuiBox-root::-webkit-scrollbar-track {
+    background: #f1f1f1; /* Color of the scrollbar track */
+  }
+  
+  /* Handle */
+  .MuiBox-root::-webkit-scrollbar-thumb {
+    background: #888; /* Color of the scrollbar handle */
+  }

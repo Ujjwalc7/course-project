@@ -5,8 +5,9 @@ const protectedResource = require('../middleWare/protectedResources.js');
 const upload = require("../middleWare/upload.js");
 
 
+router.get('/', protectedResource, userController.getUserByJwt);
 router.get('/get/all-user', protectedResource, userController.getAllUser);
-router.get('/get/user/id/:id', protectedResource, userController.getUser);
+router.get('/id/:id', protectedResource, userController.getUser);
 router.put('/update/id/:userId', protectedResource, upload.single('profileImg'), userController.updateUserById);
 router.put('/follow/:userId', protectedResource, userController.follow);
 router.put('/unfollow/:userId', protectedResource, userController.unFollow);

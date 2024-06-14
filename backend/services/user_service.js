@@ -49,17 +49,14 @@ const updateUserById = async(userId, body, user, res) => {
       const userFromDb = await User.findById(userId);
       
         if(userId.toString() === user._id.toString()) { //perform action only if user logged in and authenticated
-          if(userFromDb.profileImg){
-            if(userFromDb.profileImg !== body.profileImg) {
-              console.log(deleteOldImage(userFromDb.profileImg)); //if new image is recieved then remove old image
-            } 
-          }
           const resp = await User.findByIdAndUpdate(userId, body, {new: true}).exec(); //update user profile and return updated profile
+          resp.password = undefined; //
           return resp;
         }else{
           res.status(401).json({error:"user is not authorized to perform this action"});
         }
     } catch (error) {
+      console.log(error.message);
         throw new Error(error.message);
     }
 }
@@ -88,16 +85,11 @@ const deleteProfileImage = async(userId, user, res) => {
 // function to delete old images of a post
 
 const deleteOldImage = (image) => {
-  try {
+  if(image.includes('https')) return 'user had default profile image url';
     if (image) {
       fs.unlinkSync(`./uploads/${image}`); // remove old image from filesystem
-      return { message: "Image deleted successfully" };
-    } else {
-      throw new Error("Image not found");
+      return ;
     }
-  } catch (error) {
-    throw new Error(error.message);
-  }
 };
 
 // function to follow users

@@ -20,7 +20,15 @@ const getPostById = async (id, res) => {
   try {
     const resp = await Tweet.findById(id)
       .populate("author", "userName profileImg") //populate post owner
-      .populate({path:"replies", populate: {path: 'author', select: "userName profileImg"}}) // populate post replies and authors of replied tweets
+      .populate({
+        path: "replies",
+        populate: { path: "author", select: "userName profileImg" }, // populate post replies and authors of replied tweets
+      })
+      .populate({
+        path: "replies",
+        populate: { path: "retweetBy", select: "userName" }, // populate userNames replies who retweeted this tweet
+      })
+      .populate("retweetBy", "userName") // populate users that retweeted this tweet
       .exec();
     if (!resp) {
       res.status(404).json("Post not found");
@@ -37,7 +45,9 @@ const getPostById = async (id, res) => {
 const getAllPost = async (res) => {
   try {
     const resp = await Tweet.find()
+      .sort({ createdAt: -1 })
       .populate("author", "userName profileImg")
+      .populate("retweetBy", "userName") // populate users that retweeted this tweet
       .exec(); //populate post owner
     if (!resp) {
       res.status(404).json("Post not found");
@@ -51,10 +61,14 @@ const getAllPost = async (res) => {
 
 // function to get all the posts of the logged in user and populate the author field
 
-const getUserAllPost = async (user) => {
+const getUserAllPost = async (userId) => {
   try {
-    const resp = await Tweet.find({$or: [{author: user._id}, {replies: user._id}] })
+    const resp = await Tweet.find({
+      $or: [{ author: userId }, { replies: userId }],
+    })
+      .sort({ createdAt: -1 })
       .populate("author", "userName profileImg") //populate post owner
+      .populate("retweetBy", "userName") // populate users that retweeted this tweet
       .exec();
     if (!resp) {
       throw new Error("Posts not found");
@@ -79,8 +93,8 @@ const deletePostById = async (postId, user, res) => {
     }
     // delete the tweet only if the user is authorized
     if (post.author._id.toString() === user._id.toString()) {
-      if(post.image){
-        deleteOldImage(post.image);  //If the tweet has an image, delete it
+      if (post.image) {
+        deleteOldImage(post.image); //If the tweet has an image, delete it
       }
       const resp = await Tweet.findByIdAndDelete(postId);
       return resp;
@@ -108,7 +122,6 @@ const deleteOldImage = (image) => {
   }
 };
 
-
 // function to update the post and delete old image of the post
 
 // const updatePostById = async (body, file, res) => {
@@ -124,8 +137,6 @@ const deleteOldImage = (image) => {
 //     throw new Error(error);
 //   }
 // };
-
-
 
 // fuction to like posts
 
@@ -167,7 +178,7 @@ const postReply = async (postId, body, user, res) => {
       },
       { new: true } // To return the updated document
     ); // finding the tweet by id sent from the client
-    return post;
+    return createdPost;
   } catch (error) {
     throw new Error(error.message);
   }
@@ -175,26 +186,26 @@ const postReply = async (postId, body, user, res) => {
 
 // function to retweet or cancel a retweet
 
-const reTweet = async(postId, user, res) => {
+const reTweet = async (postId, user, res) => {
   try {
     const tweet = await Tweet.findById(postId);
-    if(!tweet) {
+    if (!tweet) {
       res.status(404).json("Post not found");
       return;
     }
-    if(tweet.retweetBy.includes(user._id)){
+    if (tweet.retweetBy.includes(user._id)) {
       tweet.retweetBy = tweet.retweetBy.filter(
         (userId) => userId.toString() !== user._id.toString()
       );
-    }else{
+    } else {
       tweet.retweetBy.push(user._id);
     }
     return await tweet.save();
   } catch (error) {
-      console.log(error);
-      throw new Error(error.message);
+    console.log(error);
+    throw new Error(error.message);
   }
-}
+};
 
 module.exports = {
   createPost,
@@ -205,5 +216,5 @@ module.exports = {
   getUserAllPost,
   likeUnlikePost,
   postReply,
-  reTweet
+  reTweet,
 };

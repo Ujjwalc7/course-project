@@ -23,7 +23,7 @@ require('./models/user_model');
 
 app.use(cors());
 app.use(express.json());
-
+app.use('/uploads', express.static('uploads'));
 
 //all APIs to interact with client
 app.use('/api/auth', require('./routes/auth_router'));

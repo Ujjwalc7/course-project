@@ -38,9 +38,9 @@ const getAllPost = async(req, res) => {
 }
 
 const getUserAllPost = async(req, res) => {
-    const user = req.user;
+    const id = req.params.id;
     try {
-        const resp = await postService.getUserAllPost(user);
+        const resp = await postService.getUserAllPost(id);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error.message);

@@ -52,6 +52,19 @@ const createUser = async (req, res) => {
     }
   };
 
+    // function to get user details by jwt
+const getUserByJwt = async(req, res) => {
+  try {
+      const user = req.user;
+      if(!user){
+        throw new Error("User not found");
+      }
+        return res.status(200).json(user);
+    } catch (error) {
+        return res.status(500).json(error.message);
+    }
+}
+
 
   // function to get user details
 const getUser = async(req, res) => {
@@ -62,6 +75,7 @@ const getUser = async(req, res) => {
       if(!user){
         throw new Error("User not found");
       }
+      user.password = undefined;
         return res.status(200).json(user);
     } catch (error) {
         return res.status(500).json(error.message);
@@ -103,9 +117,9 @@ const updateUserById = async(req, res) => {
     try {
       if(req.file){
         profileImg = req.file.path.split('\\')[1];
-        
+        req.body.profileImg = profileImg;
       }
-        const resp = await userService.updateUserById(id, {...req.body, profileImg: profileImg ? profileImg : req.body.profileImg}, user, res);
+        const resp = await userService.updateUserById(id, req.body, user, res);
         res.status(200).json(resp);
     } catch (error) {
         console.log(error);
@@ -163,5 +177,6 @@ module.exports = {
     login,
     deleteProfileImage,
     follow,
-    unFollow
+    unFollow,
+    getUserByJwt
 }
